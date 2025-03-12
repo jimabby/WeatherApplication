@@ -30,7 +30,7 @@ This Weather Application allows users to input a city name and get the weather f
 3. Set up your API key using environment variables:
 
     ```bash
-    $env:ApiKey="your_api_key_here" ("6c22b6e37b79801ce299512a0fe487af")
+    $env:ApiKey="your_api_key_here" 
     ```
 
 ## Usage

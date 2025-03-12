@@ -4,11 +4,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WeatherApplication.Interfaces;
 using WeatherApplication.Models;
 
 namespace WeatherApplication.Services
 {
-    class ChartService
+    class ChartService: IChartService
     {
         public void SaveChart(List<WeatherData> weatherDatas, string city)
         {

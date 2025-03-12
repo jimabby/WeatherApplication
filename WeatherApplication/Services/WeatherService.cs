@@ -1,18 +1,20 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json.Linq;
 using RestSharp;
+using WeatherApplication.Interfaces;
 using WeatherApplication.Models;
 using WeatherApplication.Utils;
 
 namespace WeatherApplication.Services
 {
-    class WeatherService
+    class WeatherService: IWeatherService
     {
         private string apiKey;
         private string baseUrl = "https://api.openweathermap.org/data/2.5/forecast";
 
-        public WeatherService(string apiKey)
+        public WeatherService(IConfiguration configuration)
         {
-            this.apiKey = apiKey;
+            this.apiKey = configuration["ApiKey"];
         }
 
         public List<WeatherData> GetWeatherDatas(string city)

@@ -5,17 +5,28 @@ using WeatherApplication.Utils;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.IO;
+using Microsoft.Extensions.DependencyInjection;
+using WeatherApplication.Interfaces;
 
 class Program
 {
     static void Main()
     {
-        var builder = new ConfigurationBuilder()
-            .AddEnvironmentVariables(); // This adds environment variables to the configuration.
+        var configuration = new ConfigurationBuilder()
+            .AddEnvironmentVariables()
+            .Build();
 
-        var config = builder.Build();
+        var serviceProvider = new ServiceCollection()
+            .AddSingleton<IConfiguration>(configuration)  
+            .AddSingleton<IWeatherService, WeatherService>()  
+            .AddSingleton<IChartService, ChartService>() 
+            .BuildServiceProvider();
 
-        string apiKey = config["ApiKey"];
+        // Resolve services
+        var weatherService = serviceProvider.GetService<IWeatherService>();
+        var chartService = serviceProvider.GetService<IChartService>();
+
+        string apiKey = configuration["ApiKey"];
 
         Console.Write("Enter the city name: ");
         string city = Console.ReadLine();
@@ -29,8 +40,7 @@ class Program
         try
         {
             Console.WriteLine("Geting weather data: ");
-            var weatherService = new WeatherService(apiKey);
-            List<WeatherData> weatherDatas = weatherService.GetWeatherDatas(city);
+            var weatherDatas = weatherService.GetWeatherDatas(city);
 
             if (weatherDatas.Count > 0)
             {
@@ -43,8 +53,6 @@ class Program
                     Console.WriteLine($"Temperature: {weatherData.Temperature} °C");
                     Console.WriteLine("--------------------------------------");
                 }
-
-                var chartService = new ChartService();
 
                 chartService.SaveChart(weatherDatas, city);
                 Console.WriteLine("Save the chart successfully.");
