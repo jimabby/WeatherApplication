@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 using WeatherApplication.Interfaces;
+using Microsoft.Extensions.Caching.Memory;
 
 class Program
 {
@@ -18,6 +19,7 @@ class Program
 
         var serviceProvider = new ServiceCollection()
             .AddSingleton<IConfiguration>(configuration)  
+            .AddMemoryCache()
             .AddSingleton<IWeatherService, WeatherService>()  
             .AddSingleton<IChartService, ChartService>() 
             .BuildServiceProvider();
@@ -28,43 +30,57 @@ class Program
 
         string apiKey = configuration["ApiKey"];
 
-        Console.Write("Enter the city name: ");
-        string city = Console.ReadLine();
-
-        if (string.IsNullOrEmpty(city))
+        while (true)
         {
-            Console.WriteLine("City is required!");
-            return;
-        }
+            Console.Write("Enter the city name (You can enter 'exit' to exit.): ");
+            string city = Console.ReadLine();
 
-        try
-        {
-            Console.WriteLine("Geting weather data: ");
-            var weatherDatas = weatherService.GetWeatherDatas(city);
-
-            if (weatherDatas.Count > 0)
+            if (string.IsNullOrEmpty(city))
             {
-                Console.WriteLine("Getting weather data successfully.");
+                Console.WriteLine("City is required!");
+                continue;
+            }
 
-                // Display weather data
-                foreach (var weatherData in weatherDatas)
+            if (city.ToLower() == "exit")
+            {
+                break;
+            }
+
+            try
+            {
+                Console.WriteLine("Geting weather data: ");
+                List<WeatherData> weatherDatas;
+
+                if (!weatherService.TryGetCachedWeatherData(city, out weatherDatas))
                 {
-                    Console.WriteLine($"Date: {weatherData.Date}");
-                    Console.WriteLine($"Temperature: {weatherData.Temperature} °C");
-                    Console.WriteLine("--------------------------------------");
+                    weatherDatas = weatherService.GetWeatherDatas(city);
+                    weatherService.CachedWeatherData(city, weatherDatas);
                 }
 
-                chartService.SaveChart(weatherDatas, city);
-                Console.WriteLine("Save the chart successfully.");
+                if (weatherDatas.Count > 0)
+                {
+                    Console.WriteLine("Getting weather data successfully.");
+
+                    // Display weather data
+                    foreach (var weatherData in weatherDatas)
+                    {
+                        Console.WriteLine($"Date: {weatherData.Date}");
+                        Console.WriteLine($"Temperature: {weatherData.Temperature} °C");
+                        Console.WriteLine("--------------------------------------");
+                    }
+
+                    chartService.SaveChart(weatherDatas, city);
+                    Console.WriteLine("Save the chart successfully.");
+                }
+                else
+                {
+                    Console.WriteLine("No weather data available.");
+                }
             }
-            else
+            catch (Exception e)
             {
-                Console.WriteLine("No weather data available.");
+                Logger.Log("There exists an error: " + e.Message);
             }
-        }
-        catch (Exception e)
-        {
-            Logger.Log("There exists an error: " + e.Message);
-        }
+        }        
     }
 }
