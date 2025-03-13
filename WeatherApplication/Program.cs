@@ -8,6 +8,9 @@ using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 using WeatherApplication.Interfaces;
 using Microsoft.Extensions.Caching.Memory;
+using WeatherApplication.Database;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 class Program
 {
@@ -17,12 +20,25 @@ class Program
             .AddEnvironmentVariables()
             .Build();
 
+        string dbPath = Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.Parent.FullName, "weather.db");
+
         var serviceProvider = new ServiceCollection()
-            .AddSingleton<IConfiguration>(configuration)  
+            .AddSingleton<IConfiguration>(configuration)
             .AddMemoryCache()
-            .AddSingleton<IWeatherService, WeatherService>()  
-            .AddSingleton<IChartService, ChartService>() 
+            .AddSingleton<IWeatherService, WeatherService>()
+            .AddSingleton<IChartService, ChartService>()
+            .AddDbContext<WeatherDbContext>(options =>
+                options.UseSqlite($"Data Source={dbPath}"))//.LogTo(Console.WriteLine, LogLevel.Information))
             .BuildServiceProvider();
+
+        using (var scope = serviceProvider.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<WeatherDbContext>();
+
+            // WARNING: This deletes the database and recreates it!
+            context.Database.EnsureDeleted();
+            context.Database.EnsureCreated();
+        }
 
         // Resolve services
         var weatherService = serviceProvider.GetService<IWeatherService>();
@@ -66,6 +82,10 @@ class Program
                     {
                         Console.WriteLine($"Date: {weatherData.Date}");
                         Console.WriteLine($"Temperature: {weatherData.Temperature} °C");
+                        Console.WriteLine($"Humidity: {weatherData.Humidity}");
+                        Console.WriteLine($"Pressure: {weatherData.Pressure}");
+                        Console.WriteLine($"WindSpeed: {weatherData.WindSpeed}");
+                        Console.WriteLine($"Description: {weatherData.Description}");
                         Console.WriteLine("--------------------------------------");
                     }
 
