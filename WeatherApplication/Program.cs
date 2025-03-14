@@ -62,6 +62,15 @@ class Program
                 break;
             }
 
+            Console.Write("Enter the graph type (scatter, line, bar): ");
+            string graphType = Console.ReadLine()?.ToLower();
+
+            if (graphType != "scatter" && graphType != "line" && graphType != "bar")
+            {
+                Console.WriteLine("Invalid graph type! Please enter 'scatter', 'line', or 'bar'.");
+                continue;
+            }
+
             try
             {
                 Console.WriteLine("Geting weather data: ");
@@ -89,7 +98,7 @@ class Program
                         Console.WriteLine("--------------------------------------");
                     }
 
-                    chartService.SaveChart(weatherDatas, city);
+                    chartService.SaveChart(weatherDatas, city, graphType);
                     Console.WriteLine("Save the chart successfully.");
                 }
                 else

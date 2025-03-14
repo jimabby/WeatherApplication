@@ -21,7 +21,7 @@ namespace WeatherApplication.Services
             this.dbContext = dbContext;
         }
 
-        public void SaveChart(List<WeatherData> weatherDatas, string city)
+        public void SaveChart(List<WeatherData> weatherDatas, string city, string graphType)
         {
             var plt = new ScottPlot.Plot();
 
@@ -34,9 +34,26 @@ namespace WeatherApplication.Services
                 temperatures.Add(data.Temperature);
             }
 
-            var scatter = plt.Add.Scatter(dates.ToArray(), temperatures.ToArray());
-            scatter.Color = Colors.Blue;
-            scatter.LineWidth = 2;
+            // User-selected graph type
+            if (graphType == "scatter")
+            {
+                var scatter = plt.Add.Scatter(dates.ToArray(), temperatures.ToArray());
+                scatter.Color = Colors.Blue;
+                scatter.LineWidth = 2;
+            }
+            else if (graphType == "line")
+            {
+                var line = plt.Add.ScatterLine(dates.ToArray(), temperatures.ToArray());
+                line.Color = Colors.Green;
+                line.LineWidth = 2;
+            }
+            else if (graphType == "bar")
+            {
+                var bar = plt.Add.Bars(temperatures.ToArray());
+                bar.Color = Colors.Red;
+
+                plt.Axes.Bottom.SetTicks(dates.ToArray(), dates.Select(d => DateTime.FromOADate(d).ToShortDateString()).ToArray());
+            }
 
 
             plt.Axes.DateTimeTicksBottom();

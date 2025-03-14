@@ -9,6 +9,6 @@ namespace WeatherApplication.Interfaces
 {
     interface IChartService
     {
-        void SaveChart(List<WeatherData> weatherDatas, string city);
+        void SaveChart(List<WeatherData> weatherDatas, string city, string graphType);
     }
 }
