@@ -1,16 +1,26 @@
-﻿using ScottPlot;
+﻿using Microsoft.EntityFrameworkCore;
+using ScottPlot;
+using ScottPlot.Statistics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WeatherApplication.Database;
 using WeatherApplication.Interfaces;
 using WeatherApplication.Models;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace WeatherApplication.Services
 {
     class ChartService: IChartService
     {
+        private readonly WeatherDbContext dbContext;
+        public ChartService(WeatherDbContext dbContext)
+        {
+            this.dbContext = dbContext;
+        }
+
         public void SaveChart(List<WeatherData> weatherDatas, string city)
         {
             var plt = new ScottPlot.Plot();
@@ -38,6 +48,51 @@ namespace WeatherApplication.Services
             plt.SavePng(savePath, 800, 600);
 
             Console.WriteLine($"Chart saved to: {savePath}");
+
+            // Convert chart to byte array
+            byte[] imageBytes = plt.GetImageBytes(800, 600, ScottPlot.ImageFormat.Png);
+
+            // Debug: Ensure imageBytes is not null
+            if (imageBytes == null || imageBytes.Length == 0)
+            {
+                Console.WriteLine("Error: Chart imageBytes is null or empty.");
+                return;
+            }
+
+            Console.WriteLine($"Generated image size: {imageBytes.Length} bytes");
+
+
+            // Store in database
+            try
+            {
+                // Use direct SQL since we know this works reliably
+                string connectionString = dbContext.Database.GetDbConnection().ConnectionString;
+                using (var connection = new Microsoft.Data.Sqlite.SqliteConnection(connectionString))
+                {
+                    connection.Open();
+                    using (var command = connection.CreateCommand())
+                    {
+                        // Clear the entire table
+                        command.CommandText = "DELETE FROM WeatherCharts";
+                        command.ExecuteNonQuery();
+
+                        // Insert the new record
+                        command.Parameters.Clear();
+                        command.CommandText = @"INSERT INTO WeatherCharts (City, Date, ChartImage) 
+                               VALUES (@city, @date, @image)";
+                        command.Parameters.AddWithValue("@city", city);
+                        command.Parameters.AddWithValue("@date", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+                        command.Parameters.AddWithValue("@image", imageBytes);
+                        int rowsAffected = command.ExecuteNonQuery();
+                        Console.WriteLine($"Database operation affected {rowsAffected} rows");
+                    }
+                }
+                Console.WriteLine($"Chart for {city} saved in database successfully.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ERROR: {ex.Message}");
+            }
         }
     }
 }

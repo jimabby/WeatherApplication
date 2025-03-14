@@ -12,5 +12,6 @@ namespace WeatherApplication.Database
         {
             modelBuilder.Entity<WeatherRecord>().ToTable("WeatherRecords");
         }
+        public DbSet<WeatherChart> WeatherCharts { get; set; }
     }
 }
