@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using ScottPlot;
 using ScottPlot.Statistics;
 using System;
@@ -25,34 +26,43 @@ namespace WeatherApplication.Services
         {
             var plt = new ScottPlot.Plot();
 
-            List<double> dates = new List<double>();
-            List<double> temperatures = new List<double>();
+            List<double> dates = weatherDatas.Select(data => data.Date.ToOADate()).ToList();
+            Dictionary<string, List<double>> metricsData = new Dictionary<string, List<double>>
+            {
+                { "Temperature (°C)", weatherDatas.Select(data => data.Temperature).ToList() },
+                { "Humidity (%)", weatherDatas.Select(data => (double)data.Humidity).ToList() },
+                { "Wind Speed (km/h)", weatherDatas.Select(data => data.WindSpeed).ToList() },
+            };
 
-            foreach (var data in weatherDatas)
+            Dictionary<string, Color> metricColors = new Dictionary<string, Color>
             {
-                dates.Add(data.Date.ToOADate());
-                temperatures.Add(data.Temperature);
-            }
+                { "Temperature (°C)", Colors.Blue },
+                { "Humidity (%)", Colors.Green },
+                { "Wind Speed (km/h)", Colors.Red }
+            };
 
-            // User-selected graph type
-            if (graphType == "scatter")
+            foreach (var metric in metricsData.Keys)
             {
-                var scatter = plt.Add.Scatter(dates.ToArray(), temperatures.ToArray());
-                scatter.Color = Colors.Blue;
-                scatter.LineWidth = 2;
-            }
-            else if (graphType == "line")
-            {
-                var line = plt.Add.ScatterLine(dates.ToArray(), temperatures.ToArray());
-                line.Color = Colors.Green;
-                line.LineWidth = 2;
-            }
-            else if (graphType == "bar")
-            {
-                var bar = plt.Add.Bars(temperatures.ToArray());
-                bar.Color = Colors.Red;
+                // User-selected graph type
+                if (graphType == "scatter")
+                {
+                    var scatter = plt.Add.Scatter(dates.ToArray(), metricsData[metric].ToArray());
+                    scatter.Color = metricColors[metric];
+                    scatter.LineWidth = 2;
+                }
+                else if (graphType == "line")
+                {
+                    var line = plt.Add.ScatterLine(dates.ToArray(), metricsData[metric].ToArray());
+                    line.Color = metricColors[metric];
+                    line.LineWidth = 2;
+                }
+                else if (graphType == "bar")
+                {
+                    var bar = plt.Add.Bars(metricsData[metric].ToArray());
+                    bar.Color = metricColors[metric];
 
-                plt.Axes.Bottom.SetTicks(dates.ToArray(), dates.Select(d => DateTime.FromOADate(d).ToShortDateString()).ToArray());
+                    plt.Axes.Bottom.SetTicks(dates.ToArray(), dates.Select(d => DateTime.FromOADate(d).ToShortDateString()).ToArray());
+                }
             }
 
 
