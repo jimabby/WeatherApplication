@@ -15,15 +15,17 @@ namespace WeatherApplication.Services
         private string baseUrl = "https://api.openweathermap.org/data/2.5/forecast";
         private readonly IMemoryCache cache;
         private readonly WeatherDbContext dbContext;
+        private readonly HttpClient httpClient;
 
-        public WeatherService(IConfiguration configuration, IMemoryCache cache, WeatherDbContext dbContext)
+        public WeatherService(IConfiguration configuration, IMemoryCache cache, WeatherDbContext dbContext, HttpClient httpClient)
         {
             this.apiKey = configuration["ApiKey"];
             this.cache = cache ?? throw new ArgumentNullException(nameof(cache));
             this.dbContext = dbContext;
+            this.httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         }
 
-        public List<WeatherData> GetWeatherDatas(string city)
+        public async Task<List<WeatherData>> GetWeatherDatasAsync(string city)
         {
             string cacheKey = $"Weather_{city}";
 
@@ -34,7 +36,7 @@ namespace WeatherApplication.Services
             request.AddParameter("appid", this.apiKey);
             request.AddParameter("units", "metric");
 
-            var response = client.Execute(request);
+            var response = await client.ExecuteAsync(request);
 
             if (response.StatusCode != System.Net.HttpStatusCode.OK || string.IsNullOrEmpty(response.Content))
             {
@@ -92,7 +94,7 @@ namespace WeatherApplication.Services
                     //Console.WriteLine($"Saving Record: City = {record.City}, Date = {record.Date}");
                 }
                 ;
-                int recordsSaved = this.dbContext.SaveChanges();
+                int recordsSaved = await this.dbContext.SaveChangesAsync();
                 Console.WriteLine("Records saved to the database.");
                 Console.WriteLine($"Records saved: {recordsSaved}");
             }

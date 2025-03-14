@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging;
 
 class Program
 {
-    static void Main()
+    static async Task Main(string[] args)
     {
         var configuration = new ConfigurationBuilder()
             .AddEnvironmentVariables()
@@ -25,6 +25,7 @@ class Program
         var serviceProvider = new ServiceCollection()
             .AddSingleton<IConfiguration>(configuration)
             .AddMemoryCache()
+            .AddHttpClient()
             .AddSingleton<IWeatherService, WeatherService>()
             .AddSingleton<IChartService, ChartService>()
             .AddDbContext<WeatherDbContext>(options =>
@@ -78,7 +79,7 @@ class Program
 
                 if (!weatherService.TryGetCachedWeatherData(city, out weatherDatas))
                 {
-                    weatherDatas = weatherService.GetWeatherDatas(city);
+                    weatherDatas = await weatherService.GetWeatherDatasAsync(city);
                     weatherService.CachedWeatherData(city, weatherDatas);
                 }
 
