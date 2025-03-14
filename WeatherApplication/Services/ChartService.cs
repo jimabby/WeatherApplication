@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using ScottPlot;
 using ScottPlot.Statistics;
@@ -29,8 +30,8 @@ namespace WeatherApplication.Services
             List<double> dates = weatherDatas.Select(data => data.Date.ToOADate()).ToList();
             Dictionary<string, List<double>> metricsData = new Dictionary<string, List<double>>
             {
-                { "Temperature (°C)", weatherDatas.Select(data => data.Temperature).ToList() },
                 { "Humidity (%)", weatherDatas.Select(data => (double)data.Humidity).ToList() },
+                { "Temperature (°C)", weatherDatas.Select(data => data.Temperature).ToList() },                
                 { "Wind Speed (km/h)", weatherDatas.Select(data => data.WindSpeed).ToList() },
             };
 
@@ -49,12 +50,14 @@ namespace WeatherApplication.Services
                     var scatter = plt.Add.Scatter(dates.ToArray(), metricsData[metric].ToArray());
                     scatter.Color = metricColors[metric];
                     scatter.LineWidth = 2;
+                    scatter.LegendText = metric;
                 }
                 else if (graphType == "line")
                 {
                     var line = plt.Add.ScatterLine(dates.ToArray(), metricsData[metric].ToArray());
                     line.Color = metricColors[metric];
                     line.LineWidth = 2;
+                    line.LegendText = metric;
                 }
                 else if (graphType == "bar")
                 {
@@ -62,14 +65,17 @@ namespace WeatherApplication.Services
                     bar.Color = metricColors[metric];
 
                     plt.Axes.Bottom.SetTicks(dates.ToArray(), dates.Select(d => DateTime.FromOADate(d).ToShortDateString()).ToArray());
+                    bar.LegendText = metric;
                 }
-            }
-
-
+            }         
+            
             plt.Axes.DateTimeTicksBottom();
             plt.Axes.Title.Label.Text = $"Weather Forecast for {city} for the next 5 Days";
             plt.Axes.Bottom.Label.Text = "Date";
-            plt.Axes.Left.Label.Text = "Temperature (°C)";
+            plt.Axes.Left.Label.Text = "Weather Metrics (°C, %, m/s)";
+            plt.Legend.IsVisible = true;
+            plt.Legend.Orientation = Orientation.Vertical;
+            plt.Legend.Alignment = Alignment.MiddleRight;
 
             string savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "weather_chart.png");
             plt.SavePng(savePath, 800, 600);
